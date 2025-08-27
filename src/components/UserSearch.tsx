@@ -59,16 +59,22 @@ function UserSearch() {
             id=""
             placeholder="Enter GitHub username"
             value={userName}
-            onChange={(e) => setUserName(e.target.value)}
+            onChange={(e) => {
+              setUserName(e.target.value);
+              setShowSuggestions(true);
+            }}
           />
-          ``
+
           {showSuggestions && suggestions?.length > 0 && (
             <ul className="suggestions">
               {suggestions.slice(0, 5).map((user: GithubUser) => {
                 return (
                   <li
                     key={user.name}
-                    onClick={() => setSubmittedUserName(user.login)}
+                    onClick={() => {
+                      setSubmittedUserName(user.login);
+                      setShowSuggestions(false);
+                    }}
                   >
                     <img
                       className="avatar-xs"
@@ -82,7 +88,7 @@ function UserSearch() {
             </ul>
           )}
         </div>
-        <button disabled={isLoading || isError} type="submit">
+        <button disabled={isLoading} type="submit">
           {isLoading ? "Loading..." : "Search"}
         </button>
       </form>
