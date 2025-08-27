@@ -6,6 +6,7 @@ import type { GithubUser } from "../types";
 
 import UserCard from "./UserCard";
 import RecentSearches from "./RecentSearchs";
+import Suggestions from "./Suggestions";
 
 function UserSearch() {
   const [userName, setUserName] = useState("");
@@ -15,7 +16,7 @@ function UserSearch() {
   });
   const [submittedUserName, setSubmittedUserName] = useState("");
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["users", submittedUserName],
     queryFn: () => fetchGithubUser(submittedUserName),
     enabled: !!submittedUserName,
@@ -23,7 +24,7 @@ function UserSearch() {
 
   const [debouncedUserName] = useDebounce(userName, 300);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [searching, setSearching] = useState(false);
+  // const [searching, setSearching] = useState(false);
 
   const { data: suggestions } = useQuery({
     queryKey: ["github-user-suggestion", debouncedUserName],
@@ -55,37 +56,39 @@ function UserSearch() {
         <div className="dropdown-wrapper">
           <input
             type="text"
-            name=""
-            id=""
+            name="githubsearch"
+            id="githubsearch"
             placeholder="Enter GitHub username"
             value={userName}
             onChange={(e) => {
-              setUserName(e.target.value);
-              setShowSuggestions(true);
+              const value = e.target.value;
+              setUserName(value);
+              setShowSuggestions(value.trim().length > 1);
             }}
           />
-
           {showSuggestions && suggestions?.length > 0 && (
-            <ul className="suggestions">
-              {suggestions.slice(0, 5).map((user: GithubUser) => {
-                return (
-                  <li
-                    key={user.name}
-                    onClick={() => {
-                      setSubmittedUserName(user.login);
-                      setShowSuggestions(false);
-                    }}
-                  >
-                    <img
-                      className="avatar-xs"
-                      src={user.avatar_url}
-                      alt={user.login}
-                    />
-                    {user.login}
-                  </li>
-                );
-              })}
-            </ul>
+            <Suggestions
+              show={showSuggestions}
+              suggestions={suggestions}
+              onSelect={(userName) => {
+                setSubmittedUserName(userName);
+                setShowSuggestions(false);
+
+                if (submittedUserName !== userName) {
+                  setSubmittedUserName(userName);
+                } else {
+                  refetch();
+                }
+
+                setRecentUsers((prev) => {
+                  const updated = [
+                    userName,
+                    ...prev.filter((val) => val !== userName),
+                  ];
+                  return updated.slice(0, 5);
+                });
+              }}
+            />
           )}
         </div>
         <button disabled={isLoading} type="submit">
